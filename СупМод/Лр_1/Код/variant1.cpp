@@ -31,25 +31,26 @@ auto benchmark(std::function<T(input_type)> fn, input_type input, intptr_t nrepe
 template <class T>
 T quadratic_form(matrix<T> A, vec<T> x)
 {   
-	intptr_t N = x.size();
+	intptr_t N = x.length();
 	vec<T> xTa(N);
 	T sum = 0;
-    for (intptr_t i = 0; i < N; i++) {
+	for (intptr_t i = 0; i < N; i++) {
 		sum = 0;
 		for (intptr_t j = 0; j < N; j++) {
-			sum = sum + x[i] * A[j][i];
+			sum = sum + x(i) * A(j * N + i);
 		}
-		xTa[i] = sum;
+		xTa(i) = sum;
 	}
 	T result = 0;
 	for (intptr_t i = 0; i < N; i++) {
-		result = result + xTa[i] * x[i];
+		result = result + xTa(i) * x(i);
+	}
 	return result;
 }
 
 int main(int argc, char* argv[])
 {
-    intptr_t n;
+    size_t n;
 
     std::cin >> n;
     matrix<double> a(n, n);
