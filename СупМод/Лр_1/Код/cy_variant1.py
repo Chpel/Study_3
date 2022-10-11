@@ -1,11 +1,12 @@
 from time import time
-import quad_form
+import numpy as np
+from quadratic_form import quadratic_form
 
 
 def benchmark(nrepeat, A, b):
 	start = time()
 	for i in range(nrepeat):
-		res = quad_form.quadratic_form(A, b)
+		res = quadratic_form(A, b)
 	end = time()
 	ms_per_run = (end - start) * 1000 / nrepeat
 	return res, ms_per_run
@@ -27,6 +28,6 @@ if len(x) != n:
 
 np_A = np.array(a)
 np_x = np.array(x)
-res, time = benchmark(1000, a, b)
+res, time = benchmark(1000, np_A, np_x)
 print(f'timing: {time}')
 print(f'result: {res}')
