@@ -1,0 +1,217 @@
+\section{Постановка задачи}
+
+В домашней работе №1 численными методами решается задача теплопроводности вида:
+
+\begin{array}{l}
+\dfrac{\partial u}{\partial t} = \alpha \dfrac{\partial^2 u}{\partial x^2} + f(x, t), \; t > 0, \; x \in (0, l_x), \\
+\left. u \right|_{t=0} = u_0(x), \\
+\left. u \right|_{x=0} = \mu_1(t), \\
+\left. u \right|_{x=l_x} = \mu_2(t),
+\end{array}
+
+где $u(x, t)$ - функция температуры, $\alpha = const$ - коэффициент теплопроводности, $f(x, t)$ - функция источника. 
+
+Задача решается двумя разностными методами - явным и неявным. 
+Зададим дискретную по времени (с шагом $\tau$) и пространству (с шагом $h$) сетку состояний $u(x_i,t_k) = u(h*i, \tau*k) = y^k_i$
+Так же в рамках задачи оценивается шкалирование ошибки обоих методов с реальным (аналитическим решением) относительно временного шага $\tau$ и пространственного $h$.
+
+Эксперименты проводятся на следующих двух задачах:
+
+\begin{equation}
+\begin{cases}
+\dfrac{\partial u}{\partial t} = \dfrac{\partial^2 u}{\partial x^2}, \; t > 0, \; x \in (0, 1), \\
+\left. u \right|_{t=0} = 0, \\
+\left. u \right|_{x=0} = 1, \\
+\left. u \right|_{x=l_x} = 1,
+\end{cases}
+\end{equation}
+
+
+\begin{equation}
+\begin{cases}
+\dfrac{\partial u}{\partial t} = \dfrac{\partial^2 u}{\partial x^2}, \; t > 0, \; x \in (0, \pi), \\
+\left. u \right|_{t=0} = \sin{(4\pi)}, \\
+\left. u \right|_{x=0} = 0, \\
+\left. u \right|_{x=l_x} = 0,
+\end{cases}
+\end{equation}
+
+Очевидно, что в отсутствии собственного источника ($f(t,x) = 0$) и константных краевых условиях, системы имеют предельное состояние:
+
+\[\exists \lim\limits_{t \rightarrow \infty} u(x, t) = u_\infty (x).\]
+
+В первом случае это - $u_{\infty1} (x) = 1$, во втором - $u_{\infty1} (x) = 0$. 
+Поэтому обе схемы будут считаться до установления сходимости их состояний,
+то есть пока вектор разницы состояний в смежные моменты времени не будет по модулю меньше заданного пользователем $\epsilon > 0$:
+
+\[ ||u^{k+1} - u^k|| < \epsilon \]
+
+\section{Явный метод}
+
+Запишем разностное уравнение явной схемы:
+$$\dfrac{y_i^{k+1} - y_i^{k}}{\tau} = \alpha \dfrac{y_{i+1}^{k} - 2 y_i^{k} + y_{i-1}^{k}}{h^2} + f_i^k,$$
+где $\tau$ и $h$ - шаги по времени и пространству, $y_i^k$ - значение приближённого решения в точке $(i, k)$ сетки, $y_i^k$ - значение функции источника в той же точке сетки. 
+
+Аппроксимируем начальное и граничные условия:
+$$
+\begin{array}{l}
+y_i^0 = u_0(x_i), \; \forall i = \overline{0, N},\\
+y_0^k = \mu_1(t_k), \\
+y_N^k = \mu_2(t_k), \; \forall k > 0.
+y_i^k = y_i^{k-1} + \frac{\alpha \tau}{h^2} \left(y_{i+1}^{k-1} - 2 y_i^{k-1} + y_{i-1}^{k-1})
+\end{array}$$
+
+Реализация кода явной схемы представлена 
+
+\section{Неявный метод}
+
+
+
+\section{Приложение}
+
+\begin{lstlisting}[language=Python, caption=Реализация явного метода на языке Python]
+import numpy as np
+
+def heat_expl(init, bound1, bound2, alpha, lx, h, tau, tol=1e-3):
+    """ Solve the heat equation `u_t = a*u_xx` for x in (0; lx) with an explicit scheme.
+    
+    Parameters
+    ----------
+    init : callable
+       Initial condition
+    bound1 : callable
+       Boundary condition for x = 0
+    bound1 : callable
+       Boundary condition for x = lx
+    alpha : float
+       Thermal diffusivity
+    h : float
+       Spatial step
+    tau : float
+       Time step
+    tol : float, optional
+       Target tolerance.
+       Stop iterations when the 2-norm of the difference between 
+       solution on this time step and the next is less the tol.
+       
+    Returns
+    -------
+    t_end : float
+       End time of calculation
+    u_end : ndarray, shape (N,)
+       Limit u_∞(x) (See above)
+    """
+    
+    # YOUR CODE HERE
+    w_x = np.arange(0, lx+h, h)[:int(lx/h)+1]
+    t_0 = 0.
+    
+    t_end = t_0 + tau
+    u_0 = np.array([init(x) for x in w_x], dtype=np.float64)
+    u_end = np.zeros(u_0.shape)
+    
+    u_end[0] = bound1(t_end)
+    u_end[-1] = bound2(t_end)
+    for i in range(1, len(u_end)-1):
+        u_end[i] = u_0[i] + tau * alpha / (h ** 2) * (u_0[i+1] - 2 * u_0[i] + u_0[i-1])
+    
+    while np.linalg.norm(u_end - u_0) >= tol:
+        u_0 = u_end.copy()
+        t_end += tau
+        u_end[0] = bound1(t_end)
+        u_end[-1] = bound2(t_end)
+        for i in range(1, len(u_end)-1):
+            u_end[i] = u_0[i] + tau * alpha / (h ** 2) * (u_0[i+1] - 2 * u_0[i] + u_0[i-1])
+    
+    
+    
+    return t_end, u_end
+
+\end{lstlisting}
+
+\begin{lstlisting}[language=Python, caption=Реализация неявного метода на языке Python]
+import numpy as np
+from scipy.linalg import solve_banded
+
+def heat_impl(init, bound1, bound2, alpha, lx, h, tau, tol=1e-3):
+    """ Solve heat equation u_t = a*u_xx for x in (0; lx) with implicit scheme
+    
+    Parameters
+    ----------
+    init : callable
+       Initial condition
+    bound1 : callable
+       Boundary condition for x = 0
+    bound1 : callable
+       Boundary condition for x = lx
+    alpha : float, optional
+       Thermal diffusivity
+    h : float
+       Spatial step
+    tau : float
+       Time step
+    tol : float, optional
+       Target tolerance.
+       Stop iterations when the 2-norm of the difference between 
+       solution on this time step and the next is less the tol.
+       
+    Returns
+    -------
+    t_end : float
+       End time of calculation
+    u_end : ndarray, shape (N,)
+       Limit u_∞(x) (See above)
+    """
+    
+    w_x = np.arange(0, lx+h, h)[:int(lx/h)+1]
+    t_0 = 0.
+    t_end = t_0 + tau
+    u_0 = np.array([init(x) for x in w_x], dtype=np.float64)
+    N = u_0.shape[0]
+    
+    A = np.zeros((N-2,N-2), dtype=np.float64)
+    b = np.zeros(N-2, dtype=np.float64)
+    u_end = np.zeros(N, dtype=np.float64)
+    u_end[0] = bound1(t_end)
+    u_end[-1] = bound2(t_end)
+    
+    A[0][:2] = (2 * alpha * tau / np.power(h, 2) + 1), -(alpha * tau / np.power(h, 2))
+    b[0] = u_0[1] + (alpha * tau / np.power(h, 2)) * u_end[0]
+    for i in range(1,N-3):
+        A[i][i-1], A[i][i], A[i][i+1] = -(alpha * tau / np.power(h, 2)), (2 * alpha * tau / np.power(h, 2) + 1), -(alpha * tau / np.power(h, 2))
+        b[i] = u_0[i+1]
+    A[-1][-2:] = -(alpha * tau / np.power(h, 2)), (2 * alpha * tau / np.power(h, 2) + 1)
+    b[-1] = u_0[-2] + (alpha * tau / np.power(h, 2)) * u_end[-1]
+    ab = np.zeros((3, A.shape[0]))
+    ab[0,1:] = np.diag(A,k=1)
+    ab[1] = np.diag(A)
+    ab[2,:-1] = np.diag(A, k=-1)
+    u_end[1:-1] = solve_banded((1,1),ab,b) 
+    while np.linalg.norm(u_end - u_0) >= tol:
+        u_0 = u_end.copy()
+        t_end += tau
+        
+        u_end = np.zeros(N, dtype=np.float64)
+        u_end[0] = bound1(t_end)
+        u_end[-1] = bound2(t_end)
+        
+        b[0] = u_0[1] + (alpha * tau / np.power(h, 2)) * u_end[0]
+        for i in range(1,N-3):
+            b[i] = u_0[i+1]
+        b[-1] = u_0[-2] + (alpha * tau / np.power(h, 2)) * u_end[-1]
+        
+        u_end[1:-1] = solve_banded((1,1),ab,b)   
+        
+    u_0 = u_end.copy()
+    t_end += tau
+    u_end = np.zeros(N, dtype=np.float64)
+    u_end[0] = bound1(t_end)
+    u_end[-1] = bound2(t_end)
+    b[0] = u_0[1] + (alpha * tau / np.power(h, 2)) * u_end[0]
+    for i in range(1,N-3):
+        b[i] = u_0[i+1]
+    b[-1] = u_0[-2] + (alpha * tau / np.power(h, 2)) * u_end[-1]
+    u_end[1:-1] = solve_banded((1,1),ab,b) 
+    
+    return t_end, u_end
+\end{lstlisting}
