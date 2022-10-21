@@ -16,7 +16,7 @@ def quadratic_form(A,x):
 	for i in range(n):
 		sum = 0
 		for j in range(n):
-			sum += x[j] * A[j][i]
+			sum += x[j] * A[j, i]
 		xTa[i] = sum
 	result = 0
 	for i in range(n):

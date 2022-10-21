@@ -5,11 +5,12 @@
 module purge                             # Очистка переменных окружения
 
 # Загрузка необходимых переменных окружения
-module load gnu8 openmpi3
 
 # Одновременный запуск задач
+module load gnu8 openmpi3
+
 idx=$SLURM_ARRAY_TASK_ID
-srun /home/iipchelintsev/Supmod/release1.out<input_data_$idx.txt
+srun /home/iipchelintsev/Supmod/release2.out<input_data_$idx.txt
 
 # done
 

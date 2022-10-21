@@ -35,17 +35,13 @@ T quadratic_form(matrix<T> A, vec<T> x)
 	vec<T> xTa(N);
 	T sum = 0;
 	for (intptr_t i = 0; i < N; i++) {
-		sum = 0;
+		xTa(i) = 0;
 		for (intptr_t j = 0; j < N; j++) {
-			sum = sum + x(i) * A(j * N + i);
+			xTa(i) += x(j) * A(j, i);
 		}
-		xTa(i) = sum;
+		sum += xTa(i) * x(i);
 	}
-	T result = 0;
-	for (intptr_t i = 0; i < N; i++) {
-		result = result + xTa(i) * x(i);
-	}
-	return result;
+	return sum;
 }
 
 int main(int argc, char* argv[])
