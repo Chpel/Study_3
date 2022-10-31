@@ -1,0 +1,192 @@
+\section{Постановка задачи}
+
+В домашней работе №3 численными методами решается задача двумерной теплопроводности.
+Условие задачи следующее:
+
+\begin{equation}
+\begin{array}{l}
+u_t = 2 ( u_{xx} + u_{yy}) + e^t \cos{\frac{\pi x}{2} \sin{\pi y}{2}}, \; x \in [0;1], \; y \in [0;1], \; t > 0 \\
+\left.u\right|_{t = 0} = 1 + xy, \\ 
+\left.u\right|_{x = 0} = 1 + \frac{e^t - e^{-\pi^2t}}{1+\pi^2} \sin{\frac{\pi y}{2}}, \; \left.u\right|_{x = 1} = 1 + y \\
+\left.u\right|_{y = 0} = 1 \; \left.u\right|_{y = 1} = 1 + x + \frac{e^t - e^{-\pi^2t}}{1+\pi^2} \cos{\frac{\pi x}{2}}, \\
+\label{eq:task}
+\end{array}
+\end{equation}
+
+
+Задача решается методом продольно-поперечной схемы.
+Задаётся квадратная сетка с $(N+1)^2$ узлов, из которой получаем шаг сетки по обоим осям $h_x = h_y = h = 1/N$.
+Узлы сетки получают дискретную форму исчисления:
+Так как в задаче процесс не является стационарным, задаётся конечный момент времени $T$ и количество итераций $N_t$ в моменты времени $t_i \in [0,T], i = \overline{0,N_t}$. Отсюда получим шаг по времени $\tau$.
+
+Узлы сетки каждого слоя имееют дискретное исчисление по всем трём координатам - задаём сеточную функцию решения дискретной задачи:
+
+\[ w_{kl}^n = w(x_k, y_l, t_n), k,l = \overline{0,N},\ n = \overline{0,N_t} \]
+
+Вторые производные по координатам в дискретном виде имеют следующий вид:
+
+\[\Lambda_1  w_{kl}^n = \frac{w_{k+1,l}^n - 2 w_{kl}^n + w_{k-1,l}^n}{h^2} \]
+
+Аналогично пишется для второй координаты по второму индексу.
+
+Известно так же точное решение задачи:
+
+\[ u_{true}(x,y,t) =  1 + xy + \frac{e^t - e^{-\pi^2t}}{1+\pi^2} \cos{\frac{\pi x}{2}} \sin{\frac{\pi y}{2}} \]
+
+График точного решения имеет вид:
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\textwidth]{True.png}
+\caption{График аналитического решения задачи \ref{eq:task}}
+\end{figure}
+
+\newpage
+\section{Продольно-поперечная схема}
+
+Задача будет решаться по следующей схеме - между слоями $t_n$ и $t_{n+1}$  вводится дополнительный слой $t_{n+1/2}$:
+
+\begin{equation}
+\frac{w_{ij}^{n+1/2} - w_{ij}^n}{\tau / 2} = \Lambda_1  w_{kl}^{n+1/2} + \Lambda_2  w_{kl}^n
+\label{adi1}
+\end{equation}
+
+\begin{equation}
+\frac{w_{ij}^{n+1} - w_{ij}^{n+1/2}}{\tau / 2} = \Lambda_1  w_{kl}^{n+1/2} + \Lambda_2  w_{kl}^{n+1}
+\label{adi2}
+\end{equation}
+
+Подсхема \ref{adi1} является неявной по первой координате и явной по второй, поэтому при фиксации j и переборе $i = 1,..,N-1$ получим одну тридиагональную систему уравнений для значений сеточной функций в j-м ряде. 
+Так, рассмотрев все внутренние значения $j$, получим значения во внутренней части слоя.
+
+Разумеется, нам потребуется так же знать краевые значения в слое $n+1/2$ - точнее, края по направлению первой координаты $i=0,N$. 
+Для этого не нужно применять краевые условия как к стандартным слоям.
+Их можно получить, если вычесть \ref{adi1} из \ref{adi2}:
+
+\[ w^{n+1/2} = 1/2 (w^{n+1} + w^{n}) - \frac{\tau}{4} \Lambda_2(w^{n+1} - w^{n}) \]
+
+Индексы здесь опущены, так как для каждого слаемого одинаковы. 
+Получается, в при такой формуливке мы можем взглянуть на границу 1-й координаты, так как в выражении фигуриет лишь вторая производная по второй координате. 
+
+Теперь, зная все нужные узлы половинной слоя, можем провести аналогичное действие по подсхеме \ref{adi2} - она является неявной во второй координате и явной по первой координате.
+Поэтому теперь фиксировать будем индекс i и перебирать $j = 1,..,N-1$ и получим такую же тридиагональную систему, но уже для i-й колонки нового слоя. Известные краевые условия в положениях шаблона $j=1,N-1$ переходят в правую часть системы. Перебирая все колонки, получаем новый основной слой.
+
+Для проверки работы алгоритма возьмём конечный момент времени $T=5$ при $N_t=10000$ итерациях алгоритма. 
+Сетка слоя имеет сторону с $N=20$ промежутками между узлами и $21 \times 21$ узлов.
+Шаг по времени - $\tau = 0.0005$, $h=0.05$.
+ 
+Результирующий график итераций изображен здесь:
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\textwidth]{ADI.png}
+\caption{График численного решения задачи}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\textwidth]{Err.png}
+\caption{График отклонения численного решения задачи от аналитического}
+\end{figure}
+
+Ошибка решения по отношению к аналитическому решению оказалась равна $err = 1.4 * 10^{-3}$
+
+
+\newpage
+
+\section{Приложение}
+
+\begin{lstlisting}[language=Python, caption=Реализация продольно-поперечной схемы на языке Python, label=adi]
+import numpy as np
+from scipy.linalg import solve_banded
+import matplotlib.pyplot as plt
+
+def u_t0(x,y):
+    return 1 + x*y
+
+def u_x0(y,t):
+    return 1 + (np.exp(t) - np.exp(-np.pi**2 * t))/(1 + np.pi**2) * np.sin(np.pi * y / 2)
+
+def u_y0(x,t):
+    return 1
+
+def u_x1(y,t):
+    return 1 + y
+
+def u_y1(x,t):
+    return 1 + x + (np.exp(t) - np.exp(-np.pi**2 * t))/(1 + np.pi**2) * np.cos(np.pi * x / 2)
+
+def f(x,y,t):
+    return np.exp(t)*np.cos(np.pi*x/2) * np.sin(np.pi*y/2)
+
+def u_fill_gran(u, w_x, w_y, t):
+    N_x, N_y = u.shape
+    u[:,0] = u_y0(w_x, t)
+    u[:,-1] = u_y1(w_x,t)
+    u[0,1:-1] = u_x0(w_y[1:-1], t)
+    u[-1,1:-1] = u_x1(w_y[1:-1], t)
+    return u
+
+def u_pol_fill_gran(u_p, u0, u, tau, h):
+    N = u_p.shape[0] - 1
+    c = tau/(4*h**2)
+    for j in range(1,N):
+        y_0_jm1 = u[0,j-1] - u0[0,j-1]
+        y_0_j = u[0,j] - u0[0,j]
+        y_0_jp1 = u[0,j+1] - u0[0,j+1]
+        u_p[0][j] = (u[0,j] + u[0,j]) / 2 - c * (y_0_jm1 - 2 * y_0_j + y_0_jp1)
+        
+        y_N_jm1 = u[N,j-1] - u0[N,j-1]
+        y_N_j = u[N,j] - u0[N,j]
+        y_N_jp1 = u[N,j+1] - u0[N,j+1]
+        u_p[N][j] = (u[N,j] + u[N,j]) / 2 - c * (y_N_jm1 - 2 * y_N_j + y_N_jp1)
+    return u_p
+    
+def u_true(x,y,t):
+    return 1 + x*y + (np.exp(t) - np.exp(-np.pi**2 * t))/(1 + np.pi**2) * np.sin(np.pi * y / 2) * np.cos(np.pi * x / 2)
+
+
+N=20
+w_x, h = np.linspace(0,1,N+1, retstep=True)
+w_y, h = np.linspace(0,1,N+1, retstep=True)
+Nt=10000
+w_t, tau = np.linspace(0,5,Nt+1, retstep=True)
+
+
+u = np.zeros((N+1,N+1))
+for i in range(N+1):
+    for j in range(N+1):
+        u[i,j] = u_t0(w_x[i], w_y[j])
+plt.imshow(u)
+plt.colorbar()
+plt.show()
+
+u_pol = np.zeros((N+1,N+1))
+A = np.zeros((3,N-1))
+A[0,:] = -2/(h**2)
+A[1,:] = 4/(h**2) + 2/tau
+A[2,:] = -2/(h**2)
+b = np.zeros(N-1)
+
+for t in w_t[:-1]:
+    u0 = u.copy()
+    u.fill(0)
+    u = u_fill_gran(u, w_x, w_y, t+tau)
+    u_pol.fill(0)
+    u_pol = u_pol_fill_gran(u_pol, u0, u, tau, h)
+    
+    for j in range(1, N):
+        b = 2/(h**2) * (u0[1:-1, j+1] - 2*u0[1:-1,j] + u0[1:-1, j-1]) + 2*u0[1:-1,j]/tau + f(w_x[1:-1], w_y[j], t+tau/2)
+        b[0] += 2*u_pol[0,j]/h**2
+        b[-1] += 2*u_pol[-1,j]/h**2
+        u_pol[1:-1,j] = solve_banded((1,1),A,b)
+    
+    for i in range(1, N):
+        b = 2/(h**2) * (u_pol[i+1, 1:-1] - 2*u_pol[i, 1:-1] + u_pol[i-1, 1:-1]) + 2*u_pol[i, 1:-1]/tau + f(w_x[i], w_y[1:-1], t+tau)
+        b[0] += 2*u[i,0]/h**2
+        b[-1] += 2*u[i,-1]/h**2
+        u[i,1:-1] = solve_banded((1,1),A,b)
+plt.imshow(u)
+plt.colorbar()
+
+\end{lstlisting}
