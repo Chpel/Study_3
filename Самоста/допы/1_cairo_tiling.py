@@ -18,6 +18,15 @@ pi = ti.math.pi
 
 @ti.func
 def Cairo(uv, k):
+    """
+    основная функция определения цвета пикселя в стиле каирской плитки
+    параметры:
+        uv: вектор пикселя на экране
+        k: параметр структурного отклонения рёбер пятиугольников
+    возвращает:
+        id: код пятиугольника, на котором лежит плитка
+        d: расстояние до ближайшего ребра
+    """
     id = ti.floor(uv)  # checkerboard
     check = (id.x + id.y) % 2 # 0 or 1
     #    col += check
@@ -42,12 +51,18 @@ def Cairo(uv, k):
     d = abs(d)  # line forming
     d = ti.min(d, dot(p - 0.5, vec2(n.y, - n.x)))  # for all-pentagon cont-filling
     return id, d
-
+    
 
 
 
 @ti.kernel
 def render(t: ti.f32, frame: ti.int32):
+    """
+    процедура создания кадра на экране путем render'а каждого пикселя 
+    параметры:
+        t: время от начала выполнения программы
+        frame: номер выполняемого кадра (более подходящая хар-ка времени при записи видео)
+    """
     for fragCoord in ti.grouped(pixels):
         uv = (fragCoord - vres * 0.5) / vres.y
         muv = vec2(0, 0.4)#(ti.sin(0.4 * t) + 1.) * 0.5)
